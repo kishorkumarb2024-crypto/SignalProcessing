@@ -35,8 +35,6 @@ def apply_filter(data, b, a):
 
 def separate_audio_by_frequency(input_wav: str, output_dir: str = "output_bands", fs: int = 44100, show_plots: bool = True):
     import os
-    new_in = input_wav.removesuffix(".wav")
-    output_dir += f"{new_in}/"
     os.makedirs(output_dir, exist_ok=True)
 
     y, sr = sf.read(input_wav)
