@@ -30,7 +30,6 @@ def normalize(audio):
 def save(audio, sr):
     """Save cleaned/normalized audio."""
     sf.write('cleaned/aud_test_clean.wav', audio, sr)
-    print("✅ Cleaned audio saved to 'cleaned/aud_test_clean.wav'")
 
 def load():
     """Reload cleaned audio to verify."""
@@ -41,17 +40,12 @@ def load():
 
 def compare(raw, clean):
     """Compare amplitude and RMS before/after cleaning."""
-    print(f"\n📊 Amplitude Comparison:")
     print(f"Original max amplitude: {np.max(np.abs(raw))}")
     print(f"Cleaned max amplitude: {np.max(np.abs(clean))}")
     rms_orig = np.sqrt(np.mean(raw**2))
     rms_clean = np.sqrt(np.mean(clean**2))
     print(f"Original RMS: {rms_orig:.4f}")
     print(f"Cleaned RMS: {rms_clean:.4f}")
-
-# ---------------------------------------------------
-# 2. STFT, Spectrogram Plot
-# ---------------------------------------------------
 
 def plot(mag_db, sr, title="Spectrogram"):
     plt.figure(figsize=(12, 6))
@@ -68,10 +62,6 @@ def stft(audio, sr):
     plot(mag_db, sr, title="Original Audio Spectrogram")
     return data
 
-# ---------------------------------------------------
-# 3. NMF Separation
-# ---------------------------------------------------
-
 def apply_nmf(data, sr, n_components=2):
     """Apply NMF on magnitude spectrogram and reconstruct separated sources."""
     magnitude, phase = np.abs(data), np.angle(data)
@@ -86,7 +76,6 @@ def apply_nmf(data, sr, n_components=2):
         source_audio = librosa.istft(source_stft, hop_length=512, win_length=2048)
         filename = f"source_{i+1}.wav"
         sf.write(filename, source_audio, sr)
-        print(f"🔊 Saved {filename}")
         sources.append(source_audio)
     return sources
 
@@ -95,10 +84,6 @@ def istft(data, sr):
     sources = apply_nmf(data, sr, n_components=2)
     return sources
 
-# ---------------------------------------------------
-# 4. Optional Post-processing
-# ---------------------------------------------------
-
 def postprocess_sources(sources):
     """Normalize and enhance separated outputs."""
     processed = []
@@ -106,16 +91,10 @@ def postprocess_sources(sources):
         src = src / np.max(np.abs(src))  # normalize amplitude
         src = librosa.effects.preemphasis(src)  # simple enhancement
         processed.append(src)
-    print("✨ Post-processing complete.")
     return processed
-
-# ---------------------------------------------------
-# 5. Evaluation
-# ---------------------------------------------------
 
 def evaluate_sources(mix, sources, sr):
     """Evaluate separation using RMS and spectrograms."""
-    print("\n📈 EVALUATION RESULTS")
     for i, src in enumerate(sources):
         rms = np.sqrt(np.mean(src**2))
         print(f"Source {i+1} RMS: {rms:.4f}")
@@ -129,54 +108,35 @@ def evaluate_sources(mix, sources, sr):
         plt.tight_layout()
         plt.show()
 
-# ---------------------------------------------------
-# 6. Optional: ICA for Stereo Mix
-# ---------------------------------------------------
-
 def separate_ica(file_path):
     """Apply ICA to stereo recordings (2-channel input)."""
     X, sr = sf.read(file_path)
     if X.ndim != 2:
-        print("❌ ICA requires a stereo (2-channel) file.")
         return
     X = X - np.mean(X, axis=0)
     ica = FastICA(n_components=2, random_state=0, max_iter=1000)
     S_sep = ica.fit_transform(X)
     sf.write("ica_source1.wav", S_sep[:, 0], sr)
     sf.write("ica_source2.wav", S_sep[:, 1], sr)
-    print("🎧 ICA separation complete: 'ica_source1.wav', 'ica_source2.wav'")
     return S_sep, sr
-
-# ---------------------------------------------------
-# 7. Real-World Application: Speech Enhancement (No external library)
-# ---------------------------------------------------
 
 def enhance_speech(audio, sr):
     """
     Simple noise reduction using spectral gating (no external library).
     This simulates real-world speech enhancement (like in hearing aids or voice calls).
     """
-    print("\n🎙️ Starting noise reduction / speech enhancement...")
 
     # Compute STFT
     stft_data = librosa.stft(audio)
     magnitude, phase = np.abs(stft_data), np.angle(stft_data)
 
-    # Estimate noise using first 0.5 seconds
     noise_mag = np.mean(magnitude[:, :int(sr * 0.5 / 512)], axis=1, keepdims=True)
-
-    # Noise suppression (spectral subtraction)
     enhanced_mag = np.maximum(magnitude - noise_mag, 0.0)
-
-    # Reconstruct
     enhanced_stft = enhanced_mag * np.exp(1j * phase)
     enhanced_audio = librosa.istft(enhanced_stft)
 
-    # Save
     sf.write('enhanced_speech.wav', enhanced_audio, sr)
-    print("✅ Speech enhanced and saved as 'enhanced_speech.wav'")
 
-    # Compare spectrograms
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
     librosa.display.specshow(librosa.amplitude_to_db(magnitude, ref=np.max),
@@ -193,10 +153,6 @@ def enhance_speech(audio, sr):
     plt.show()
 
     return enhanced_audio
-
-# ---------------------------------------------------
-# 8. Main Driver
-# ---------------------------------------------------
 
 if __name__ == "__main__":
     audio_raw, sr = load_raw_data()
@@ -215,5 +171,4 @@ if __name__ == "__main__":
 
     enhanced_audio = enhance_speech(audio_raw, sr)
 
-    print("\n✅ Audio separation and enhancement complete!")
     print("Check generated files: 'source_1.wav', 'source_2.wav', 'enhanced_speech.wav', and 'cleaned/aud_test_clean.wav'.")
