@@ -15,7 +15,6 @@ from scipy.signal import savgol_filter
 
 def load_audio():
     audio, sr = librosa.load('data/aud_test.wav', sr=None)
-    print(f"🎵 Loaded audio: {audio.shape}, Sample Rate: {sr}")
     return audio, sr
 
 def preprocess(audio):
@@ -58,7 +57,6 @@ def nmf_separate(audio, sr, n_components=3):
 
         sf.write(f"source_{i+1}.wav", src_audio, sr)
         show_spec(src_audio, sr, f"Separated Source {i+1}")
-        print(f"✅ Saved: source_{i+1}.wav")
         sources.append(src_audio)
     return sources
 
@@ -74,7 +72,6 @@ def enhance_speech(audio, sr):
     enhanced = enhanced / np.max(np.abs(enhanced))
     sf.write("enhanced_speech.wav", enhanced, sr)
     show_spec(enhanced, sr, "Enhanced Speech (Noise Reduced)")
-    print("✅ Enhanced speech saved as enhanced_speech.wav")
     return enhanced
 
 
@@ -88,11 +85,9 @@ def simple_sdr(reference, estimate):
     return sdr
 
 def evaluate_quality(reference, sources):
-    print("\n🎧 QUALITY EVALUATION (SDR in dB)")
     for i, src in enumerate(sources):
         sdr_val = simple_sdr(reference, src)
         print(f"Source {i+1}: SDR = {sdr_val:.2f} dB")
-    print("✅ Evaluation complete.\n")
 
 
 
@@ -105,7 +100,6 @@ def process():
     enhanced = enhance_speech(audio, sr)
     evaluate_quality(audio, sources)
 
-    print("🎶 Files saved: source_1.wav, source_2.wav, enhanced_speech.wav")
 
 if __name__ == "__main__":
     process()
